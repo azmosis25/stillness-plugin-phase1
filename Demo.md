@@ -1,3 +1,5 @@
+> Demo is run using `master.js` (hardware-validated build), not `app.js`.
+
 # Stillness Engine — Internal Demo Script
 
 This document is a short, read-aloud script for presenting the Stillness Engine
@@ -9,8 +11,7 @@ Target length: ~90 seconds.
 
 ## Demo Script
 
-> “This is Stillness, a Phase-1 community plugin built to explore what calm looks
-> like as an OS-level behavior on Even G2.”
+> “This is Stillness — a Phase-1 community plugin exploring calm as an OS-level behavior on Even G2."
 
 > “When it launches, you’ll see a small, right-anchored badge. 
 > Nothing is moving yet. It’s intentionally low-noise.”
