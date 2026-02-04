@@ -2,6 +2,22 @@
 A minimal, OS-native breathing plugin for Even G2.
 Designed to progressively reduce visual noise and let the breath take over.
 
+## Code Structure
+
+This repo contains two primary entry points:
+
+- **app.js**  
+  Phase-1 reference implementation.  
+  Minimal, instructional, and aligned with SDK documentation.
+
+- **master.js**  
+  Demo / hardware-validated build.  
+  Includes gesture normalization, lifecycle-safe persistence,
+  and visual deepening logic used for internal demos and pilot testing.
+
+For first-time readers, start with `app.js`.  
+For demos or real-device behavior, see `master.js`.
+
 ## Features
 - Tap to expand (start session)
 - Tap to collapse (save time)

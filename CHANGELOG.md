@@ -11,3 +11,15 @@
 ## v0.1.1-phase1 (planned)
 - Optional: stronger foreground pause/resume behavior across firmware variants.
 - Optional: badge updates immediately on collapse (if any lag observed).
+
+## [Unreleased]
+
+### Added
+- `master.js`: hardware-grade demo build with:
+  - deterministic tap handling (including fallback codes)
+  - lifecycle-safe stillness persistence
+  - dual-clock model (session vs breath cycle)
+  - progressive visual quieting (header + frame fade)
+
+### Notes
+- `app.js` remains the Phase-1 reference implementation.
