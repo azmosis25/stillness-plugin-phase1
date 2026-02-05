@@ -15,8 +15,8 @@ This repo contains two primary entry points:
   Includes gesture normalization, lifecycle-safe persistence,
   and visual deepening logic used for internal demos and pilot testing.
 
-For first-time readers, start with `app.js`.  
-For demos or real-device behavior, see `master.js`.
+> For demos and real-device validation, use `master.js`.  
+> `app.js` is intentionally simpler and exists as a reference implementation.
 
 ## Features
 - Tap to expand (start session)

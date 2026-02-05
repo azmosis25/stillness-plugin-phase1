@@ -69,7 +69,7 @@ const CARD_H = CANVAS_H;
 const HUD_MARGIN_X = 16;
 
 // “Premium” header
-const HEADER_W = 320;
+const HEADER_W = 410;
 const HEADER_BOX = {
   x: Math.floor((CANVAS_W - HEADER_W) / 2),
   y: 90,
@@ -120,12 +120,16 @@ const PHASE_LABEL_FADE_MS = 980;
 const SESSION_SWITCH_MS = 180;
 
 // Hierarchy deepening thresholds
-const HEADER_HIDE_AFTER_CYCLES = 1; // Mid
-const BORDER_HIDE_AFTER_CYCLES = 4; // Deep
+const HEADER_HIDE_AFTER_CYCLES = 2; // Mid (fade header after 2 full breath cycles)
+const BORDER_HIDE_AFTER_CYCLES = 4; // Deep (fade outer frame after 4 full breath cycles)
+
+// Micro orientation hint (header only)
+const HEADER_HINT_CYCLES = 2; // show pattern hint for first 2 cycles
 
 // Cosmetic fade timing
-const HEADER_FADE_STEP_MS = 220;
-const BORDER_FADE_STEP_MS = 220;
+// Softer fade pacing (more like a slow exhale)
+const HEADER_FADE_STEP_MS = 380;
+const BORDER_FADE_STEP_MS = 420;
 
 // Storage
 const STORAGE_KEY = "stillness.totalSeconds.today";
@@ -154,6 +158,7 @@ function n(v) {
 }
 
 function centerToCols(text, cols) {
+  text = String(text ?? "");
   if (text.length > cols) text = text.slice(0, cols);
   const pad = Math.max(0, Math.floor((cols - text.length) / 2));
   return " ".repeat(pad) + text;
@@ -171,7 +176,7 @@ const SESSIONS = [
   { name: "Stabilize", inhale: 4, hold: 4, exhale: 4 },
   { name: "Energize", inhale: 2, hold: 0, exhale: 2 },
   { name: "Release", inhale: 3, hold: 0, exhale: 5 },
-  { name: "Deep calm", inhale: 4, hold: 6, exhale: 8 },
+  { name: "Deep calm", inhale: 4, hold: 7, exhale: 8 },
 ];
 
 // ------------------------------
@@ -358,7 +363,7 @@ function resumeClock() {
 // ------------------------------
 function collapsedBadgeText() {
   const t = fmtMMSS(accumBaseSecondsToday);
-  return [centerToBadge("STILLNESS"), centerToBadge(`•${t}•`), centerToBadge("Tap to begin")].join(
+  return [centerToBadge("STILLNESS"), centerToBadge(`·${t}·`), centerToBadge("Tap to begin")].join(
     "\n"
   );
 }
@@ -372,12 +377,20 @@ function phaseAt(t, s) {
 function headerText(liveAccumSeconds) {
   const s = SESSIONS[sessionIdx];
   const clockish = liveAccumSeconds < 3600 ? fmtMMSS(liveAccumSeconds) : fmtHHMM(liveAccumSeconds);
-  const line = `STILLNESS • ${s.name} • ${clockish}`;
+
+  const cycleIndex = Math.floor(Math.max(0, elapsedCycleSeconds()) / (s.inhale + s.hold + s.exhale));
+
+  const hint = cycleIndex < HEADER_HINT_CYCLES
+    ? ` · ${s.inhale}-${s.hold}-${s.exhale}`
+    : "";
+
+  const line = `STILLNESS · ${s.name}${hint} · ${clockish}`;
   const base = centerToHeader(line);
 
   if (DEBUG_INPUT && Date.now() < debugEventShownUntilMs && debugEventText) {
     return `${base}\n${centerToHeader(debugEventText)}`;
   }
+
   return base;
 }
 
@@ -385,49 +398,38 @@ function breathText(elapsedSeconds) {
   const s = SESSIONS[sessionIdx];
   const total = s.inhale + s.hold + s.exhale;
   if (total <= 0) return "";
-
+  
   const tInCycle = elapsedSeconds % total;
-  const idx = tInCycle;
   const cycleIndex = Math.floor(elapsedSeconds / total);
 
-  const bg = [];
-  const mapIdx = [];
-  let displayPos = 0;
+  // Determine active phase and index within that phase
+  let phase = "exhale";
+  let phaseLen = s.exhale;
+  let phaseOffset = s.inhale + s.hold;
 
-  for (let i = 0; i < total; i++) {
-    let token;
-    if (i < s.inhale) token = "▒";
-    else if (i < s.inhale + s.hold) token = "▁";
-    else token = "□";
-
-    bg.push(token);
-    mapIdx[i] = displayPos;
-    displayPos++;
-
-    if (i === s.inhale - 1 && s.hold > 0) {
-      bg.push("|");
-      displayPos++;
-    }
-    if (i === s.inhale + s.hold - 1 && s.hold > 0) {
-      bg.push("|");
-      displayPos++;
-    }
+  if (tInCycle < s.inhale) {
+    phase = "inhale";
+    phaseLen = s.inhale;
+    phaseOffset = 0;
+  } else if (tInCycle < s.inhale + s.hold) {
+    phase = "hold";
+    phaseLen = s.hold;
+    phaseOffset = s.inhale;
   }
 
-  const activeIdx = mapIdx[idx];
-  if (typeof activeIdx === "number") bg[activeIdx] = "█";
+  const phaseIndex = tInCycle - phaseOffset;
 
-  // Hide separators after 1 cycle
-  if (cycleIndex >= 1) {
-    for (let j = 0; j < bg.length; j++) if (bg[j] === "|") bg[j] = " ";
+  // Render ONLY the active phase glyphs, centered as a block
+  const glyph = phase === "inhale" ? "▒" : phase === "hold" ? "▁" : "□";
+  const row = [];
+  for (let i = 0; i < phaseLen; i++) {
+    row.push(i === phaseIndex ? "█" : glyph);
   }
 
-  const line1 = centerToBreath(bg.join(" "));
+  const line1 = centerToBreath(row.join(" "));
 
-  // Whisper first 5 cycles
-  const phase = phaseAt(tInCycle, s);
+  // Whisper: first 5 cycles
   const now = Date.now();
-
   if (cycleIndex < 5) {
     if (phase !== lastPhase) {
       lastPhase = phase;
@@ -577,7 +579,8 @@ function scheduleHeaderFadeWatcher() {
     const total = s.inhale + s.hold + s.exhale;
     if (total <= 0) return;
 
-    const t = Math.max(0, elapsedSecondsNow());
+    // Fade hierarchy is tied to breath cycles (cycle clock), not session time.
+    const t = Math.max(0, elapsedCycleSeconds());
     const cycleIndex = Math.floor(t / total);
     const tInCycle = t % total;
 
@@ -608,7 +611,8 @@ function scheduleBorderFadeWatcher() {
     const total = s.inhale + s.hold + s.exhale;
     if (total <= 0) return;
 
-    const t = Math.max(0, elapsedSecondsNow());
+    // Fade hierarchy is tied to breath cycles (cycle clock), not session time.
+    const t = Math.max(0, elapsedCycleSeconds());
     const cycleIndex = Math.floor(t / total);
     const tInCycle = t % total;
 
@@ -910,7 +914,7 @@ async function onEvenHubEvent(evt) {
       await pushText(
         HEADER_ID,
         HEADER_NAME,
-        headerText(accumBaseSecondsToday + Math.max(0, elapsedSecondsNow()))
+        headerText(accumBaseSecondsToday + Math.max(0, elapsedSessionSeconds()))
       );
     } else {
       await pushText(DEBUG_ID, DEBUG_NAME, debugEventText);
