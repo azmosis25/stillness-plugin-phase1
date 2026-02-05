@@ -76,12 +76,12 @@ const HEADER_BOX = {
   w: HEADER_W,
   h: 50,
 };
-const HEADER_PAD = 8; // ✅ was 10
+const HEADER_PAD = 8;
 
 // Breath box (moved up)
 const BREATH_BOX = {
   x: HUD_MARGIN_X,
-  y: 150, // ✅ was 100
+  y: 150,
   w: CANVAS_W - HUD_MARGIN_X * 2,
   h: 104,
 };
@@ -120,14 +120,13 @@ const PHASE_LABEL_FADE_MS = 980;
 const SESSION_SWITCH_MS = 180;
 
 // Hierarchy deepening thresholds
-const HEADER_HIDE_AFTER_CYCLES = 2; // Mid (fade header after 2 full breath cycles)
-const BORDER_HIDE_AFTER_CYCLES = 4; // Deep (fade outer frame after 4 full breath cycles)
+const HEADER_HIDE_AFTER_CYCLES = 2;
+const BORDER_HIDE_AFTER_CYCLES = 4;
 
 // Micro orientation hint (header only)
-const HEADER_HINT_CYCLES = 2; // show pattern hint for first 2 cycles
+const HEADER_HINT_CYCLES = 2;
 
 // Cosmetic fade timing
-// Softer fade pacing (more like a slow exhale)
 const HEADER_FADE_STEP_MS = 380;
 const BORDER_FADE_STEP_MS = 420;
 
@@ -145,7 +144,6 @@ const OS_EVT = {
   FOREGROUND_EXIT: 5,
 };
 
-// Tap fallback codes observed on your device tests.
 const TAP_FALLBACK = new Set([OS_EVT.CLICK, 13]);
 
 const BLANK = "\u2800"; // invisible character
@@ -313,9 +311,6 @@ let lastDebugText = null;
 // ------------------------------
 // Time helpers
 // ------------------------------
-// Two clocks:
-// - session clock continues across pattern switches
-// - cycle clock restarts on pattern switches
 let sessionStartedAtMs = 0;
 let cycleStartedAtMs = 0;
 
@@ -579,7 +574,6 @@ function scheduleHeaderFadeWatcher() {
     const total = s.inhale + s.hold + s.exhale;
     if (total <= 0) return;
 
-    // Fade hierarchy is tied to breath cycles (cycle clock), not session time.
     const t = Math.max(0, elapsedCycleSeconds());
     const cycleIndex = Math.floor(t / total);
     const tInCycle = t % total;
@@ -611,7 +605,6 @@ function scheduleBorderFadeWatcher() {
     const total = s.inhale + s.hold + s.exhale;
     if (total <= 0) return;
 
-    // Fade hierarchy is tied to breath cycles (cycle clock), not session time.
     const t = Math.max(0, elapsedCycleSeconds());
     const cycleIndex = Math.floor(t / total);
     const tInCycle = t % total;
@@ -735,7 +728,6 @@ async function rebuildUI() {
       isEventCapture: 0,
     };
 
-    // ✅ Breath box: NO BORDER EVER
     const breath = {
       xPosition: BREATH_BOX.x,
       yPosition: BREATH_BOX.y,
@@ -836,7 +828,6 @@ async function setSession(nextIdx) {
   try {
     if (!expanded) return;
 
-    // Re-show hierarchy immediately
     headerStage = 0;
     borderStage = 0;
     clearHeaderWatcher();
@@ -848,12 +839,10 @@ async function setSession(nextIdx) {
     sessionIdx = (nextIdx + SESSIONS.length) % SESSIONS.length;
     saveLastSessionIdx(sessionIdx);
 
-    // reset phase
     lastPhase = null;
     phaseWord = "";
     phaseHideAtMs = 0;
 
-    // restart cycle
     restartCycleClock();
 
     await rebuildUI();
@@ -889,7 +878,6 @@ function isTapEventType(t) {
 // Main event handler
 // ------------------------------
 async function onEvenHubEvent(evt) {
-  // Foreground gating
   if (evt?.sysEvent) {
     const code = n(evt.sysEvent.eventType);
     if (code === OS_EVT.FOREGROUND_EXIT) {
@@ -921,14 +909,12 @@ async function onEvenHubEvent(evt) {
     }
   }
 
-  // Swipe sessions (expanded only)
   if (expanded && (t === OS_EVT.SCROLL_TOP || t === OS_EVT.SCROLL_BOTTOM)) {
     const dir = t === OS_EVT.SCROLL_TOP ? -1 : 1;
     await setSession(sessionIdx + dir);
     return;
   }
 
-  // Tap collapse / expand
   if (isTapEventType(t)) {
     if (exiting) return;
 
@@ -936,12 +922,10 @@ async function onEvenHubEvent(evt) {
       expanded = true;
       running = true;
 
-      // reset phase
       lastPhase = null;
       phaseWord = "";
       phaseHideAtMs = 0;
 
-      // reset hierarchy
       headerStage = 0;
       borderStage = 0;
       clearHeaderWatcher();
@@ -975,7 +959,6 @@ async function onEvenHubEvent(evt) {
       return;
     }
 
-    // fallback reset
     running = false;
     expanded = false;
     frozenAtSeconds = null;
