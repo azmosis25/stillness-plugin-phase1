@@ -2,73 +2,115 @@
 
 # Stillness Engine — Internal Demo Script
 
-This document is a short, read-aloud script for presenting the Stillness Engine
-during internal demos or reviews.
-
-Target length: ~90 seconds.
+This document provides three concise demo formats for internal reviews.
 
 ---
 
-## Demo Script
+# 30‑Second Version (Executive Overview)
 
-> “This is Stillness — a Phase-1 community plugin exploring calm as an OS-level behavior on Even G2."
-
-> “When it launches, you’ll see a small, right-anchored badge. 
-> Nothing is moving yet. It’s intentionally low-noise.”
-
-(Pause for a second)
-
-> “A single tap expands the container. The right edge stays fixed, and the interface opens 
-> leftward—so it feels like information is being revealed, not pushed at you.”
+> “This is Stillness — a Phase‑1 background plugin for Even G2.  
+> It launches as a right‑anchored badge with no motion.”
 
 (Tap to expand)
 
-> “The session starts immediately. There’s no setup screen, no instruction text. 
+> “A single tap expands the container and starts the session immediately.  
 > Breath is the primary signal.”
 
-(Let the breath bar animate for a few seconds)
+(Let it animate briefly)
 
-> “At the top, you have context—what session you’re in and elapsed time. 
-> At the bottom, the breath bar and a subtle phase label. Everything else fades away.”
+> “Swipe up or down changes the breath pattern.  
+> Tap again collapses the container and persists the session time.”
 
-(Swipe up/down once)
+> “This build focuses on gesture reliability, deterministic state transitions, and progressive visual reduction under current SDK constraints.”
 
-> “Swiping changes the breath pattern. The cycle restarts cleanly, without visual jumps.”
+---
 
-(Pause, let it run briefly)
+# 60‑Second Version (Product + Pattern)
 
-> “After the first cycle, the header fades out. The goal is to progressively reduce visual 
-> presence as attention settles.”
+> “Stillness is a background plugin built to behave like a system affordance rather than a full app.”
+
+> “In the collapsed state, it presents a minimal badge with accumulated time.”
+
+(Tap to expand)
+
+> “On tap, it expands leftward while keeping the right edge fixed.  
+> The session starts immediately — no setup screen.”
+
+> “The header provides session context and elapsed time.  
+> The breath glyph is centered and phase‑aware.”
+
+(Swipe once)
+
+> “Swipe up or down switches sessions.  
+> The breath cycle restarts cleanly while the overall session timer continues.”
+
+(Pause)
+
+> “After two full cycles, the header fades.  
+> After four cycles, the outer frame fades.  
+> The interface reduces itself over time.”
 
 (Tap to collapse)
 
-> “Tapping again collapses the container. The session stops, and the time spent is 
-> quietly accumulated—no confirmation, no score.”
-
-> “The idea here isn’t meditation as an app. It’s calm as a system overlay—something that can live 
-> alongside time, weather, and notifications without competing with them.”
-
-> “This build intentionally focuses on gesture reliability and layout stability under current SDK constraints. 
-> Feedback from this phase is helping define best practices for background plugins.”
-
-
-> “In later phases, this could collapse further into a widget-level presence, with the plugin opening 
-> only when someone wants to go deeper.”
-
+> “Tap again collapses the plugin and persists accumulated time.  
+> No confirmation screen.”
 
 ---
 
-## Demo Notes
+# 2‑Minute Version (Reference Implementation Framing)
 
-- Single tap expands and starts the session
-- Swipe up/down switches breath sessions
-- Tap again collapses and saves time
-- Header fades after first full breath cycle
+> “Stillness is a Phase‑1 reference implementation for background plugins on Even G2.”
+
+> “It demonstrates deterministic state transitions:
+> collapsed → expanded → reduced visual state.”
+
+(Tap to expand)
+
+> “Expansion is width‑based to reduce layout instability.  
+> Tap detection is normalized through LIST container capture.”
+
+> “Two internal clocks are maintained:
+> – Session clock (continues across pattern switches)  
+> – Cycle clock (restarts on session change).”
+
+(Swipe up/down)
+
+> “Swiping changes breath patterns without resetting the session timer.  
+> This avoids accidental loss of accumulated time.”
+
+> “Lifecycle events are handled conservatively:
+> foreground exit freezes clocks; collapse persists time.”
+
+(Pause through fade sequence)
+
+> “Visual hierarchy reduces over time:
+> – Header fades after two cycles  
+> – Frame fades after four cycles  
+> The breath remains.”
+
+(Tap to collapse)
+
+> “Collapse persists accumulated time and returns to badge state.”
+
+> “The intent of this build is not feature breadth.  
+> It demonstrates stability, gesture determinism, and minimal‑rebuild layout behavior under current SDK constraints.”
 
 ---
 
-## Phase-1 Context
+# Demo Checklist (Quick QA)
 
-- Focus is on gesture reliability and layout stability
-- Foreground/background events are intentionally handled conservatively
-- Visual noise is progressively reduced during a session
+- Tap expands and starts session
+- Swipe changes sessions (expanded only)
+- Session timer continues across pattern switches
+- Header fades after 2 cycles
+- Frame fades after 4 cycles
+- Tap collapses and persists time
+
+---
+
+# Phase‑1 Scope
+
+- Focus: stability and predictable gesture handling
+- Conservative lifecycle management
+- Minimal rebuild strategy
+- Designed as a background behavior, not a full application

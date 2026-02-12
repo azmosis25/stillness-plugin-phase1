@@ -13,11 +13,11 @@
 - [ ] Swipe up → previous session.
 
 ## 30–45s: Deepening
-- [ ] After 1 full cycle, header dims then disappears.
-- [ ] Breath bar remains centered and stable.
+- [ ] After 2 full cycles, header dims then disappears.
+- [ ] After 4 full cycles, outer frame fades.
 
 ## 45–60s: Collapse
 - [ ] Tap → collapses to badge.
 - [ ] Badge time updates (or updates after relaunch if firmware delays UI refresh).
 
-PASS = no gesture failures, no UI lockups, no flicker loops.
+PASS: No gesture failures, no UI lockups, no rendering artifacts.

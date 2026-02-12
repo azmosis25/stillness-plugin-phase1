@@ -43,7 +43,7 @@
  *
  * SDK
  * ---
- * @evenrealities/even_hub_sdk ^0.0.6
+ * @evenrealities/even_hub_sdk ^0.0.7
  */
 
 import { waitForEvenAppBridge } from "@evenrealities/even_hub_sdk";
@@ -94,7 +94,7 @@ const BADGE_BOX = {
 };
 
 // Containers (IDs must be unique)
-const LIST_ID = 1; // LIST gesture catcher (collapsed only)
+const LIST_ID = 1; // LIST container (gesture surface in collapsed)
 const FRAME_ID = 2; // outer border/frame
 const HEADER_ID = 3; // header text
 const BREATH_ID = 4; // breath text (gesture capture in expanded)
@@ -252,8 +252,8 @@ let running = false;
 let sessionIdx = 0;
 let accumBaseSecondsToday = 0;
 
-let startedAtMs = 0;
-let frozenAtSeconds = null;
+let frozenSessionSeconds = null;
+let frozenCycleSeconds = null;
 let pluginForeground = true;
 
 let tickTimer = null;
@@ -315,12 +315,12 @@ let sessionStartedAtMs = 0;
 let cycleStartedAtMs = 0;
 
 function elapsedSessionSeconds() {
-  if (typeof frozenAtSeconds === "number") return frozenAtSeconds;
+  if (typeof frozenSessionSeconds === "number") return frozenSessionSeconds;
   return Math.floor((Date.now() - sessionStartedAtMs) / 1000);
 }
 
 function elapsedCycleSeconds() {
-  if (typeof frozenAtSeconds === "number") return frozenAtSeconds;
+  if (typeof frozenCycleSeconds === "number") return frozenCycleSeconds;
   return Math.floor((Date.now() - cycleStartedAtMs) / 1000);
 }
 
@@ -328,7 +328,8 @@ function startSessionClock() {
   const now = Date.now();
   sessionStartedAtMs = now;
   cycleStartedAtMs = now;
-  frozenAtSeconds = null;
+  frozenSessionSeconds = null;
+  frozenCycleSeconds = null;
   sessionPersisted = false;
 }
 
@@ -342,15 +343,22 @@ function elapsedSecondsNow() {
 }
 
 function freezeClock() {
-  if (typeof frozenAtSeconds === "number") return;
-  frozenAtSeconds = Math.max(0, elapsedSessionSeconds());
+  if (typeof frozenSessionSeconds !== "number") {
+    frozenSessionSeconds = Math.max(0, elapsedSessionSeconds());
+  }
+  if (typeof frozenCycleSeconds !== "number") {
+    frozenCycleSeconds = Math.max(0, elapsedCycleSeconds());
+  }
 }
 
 function resumeClock() {
-  if (typeof frozenAtSeconds !== "number") return;
-  sessionStartedAtMs = Date.now() - frozenAtSeconds * 1000;
-  cycleStartedAtMs = Date.now() - (frozenAtSeconds % (SESSIONS[sessionIdx].inhale + SESSIONS[sessionIdx].hold + SESSIONS[sessionIdx].exhale)) * 1000;
-  frozenAtSeconds = null;
+  if (typeof frozenSessionSeconds !== "number" || typeof frozenCycleSeconds !== "number") return;
+
+  sessionStartedAtMs = Date.now() - frozenSessionSeconds * 1000;
+  cycleStartedAtMs = Date.now() - frozenCycleSeconds * 1000;
+
+  frozenSessionSeconds = null;
+  frozenCycleSeconds = null;
 }
 
 // ------------------------------
@@ -882,7 +890,10 @@ async function onEvenHubEvent(evt) {
     const code = n(evt.sysEvent.eventType);
     if (code === OS_EVT.FOREGROUND_EXIT) {
       pluginForeground = false;
-      if (expanded && running) freezeClock();
+      if (expanded && running) {
+        freezeClock();
+        persistIfRunning("foreground-exit");
+      }
       return;
     }
     if (code === OS_EVT.FOREGROUND_ENTER) {
@@ -892,6 +903,9 @@ async function onEvenHubEvent(evt) {
     }
   }
   if (!pluginForeground) return;
+
+  // Avoid race conditions while fading UI hierarchy
+  if (headerFadeInFlight || borderFadeInFlight) return;
 
   const t = extractEventType(evt);
 
@@ -919,56 +933,57 @@ async function onEvenHubEvent(evt) {
     if (exiting) return;
 
     if (!expanded) {
-      expanded = true;
-      running = true;
-
-      lastPhase = null;
-      phaseWord = "";
-      phaseHideAtMs = 0;
-
-      headerStage = 0;
-      borderStage = 0;
-      clearHeaderWatcher();
-      clearBorderWatcher();
-
-      startSessionClock();
-
-      await rebuildUI();
-      startTickLoop();
-
-      scheduleHeaderFadeWatcher();
-      scheduleBorderFadeWatcher();
+      await expandSession();
       return;
     }
 
     if (expanded && running) {
-      persistIfRunning("tap-collapse");
-
-      running = false;
-      expanded = false;
-
-      frozenAtSeconds = null;
-
-      headerStage = 0;
-      borderStage = 0;
-      clearHeaderWatcher();
-      clearBorderWatcher();
-
-      stopTickLoop();
-      await rebuildUI();
+      await collapseSession("tap-collapse");
       return;
     }
 
-    running = false;
-    expanded = false;
-    frozenAtSeconds = null;
-    headerStage = 0;
-    borderStage = 0;
-    clearHeaderWatcher();
-    clearBorderWatcher();
-    stopTickLoop();
-    await rebuildUI();
+    // Fallback: ensure we return to collapsed safely
+    await collapseSession("fallback-collapse");
   }
+}
+async function expandSession(reason = "tap-expand") {
+  expanded = true;
+  running = true;
+
+  lastPhase = null;
+  phaseWord = "";
+  phaseHideAtMs = 0;
+
+  headerStage = 0;
+  borderStage = 0;
+  clearHeaderWatcher();
+  clearBorderWatcher();
+
+  startSessionClock();
+
+  await rebuildUI();
+  startTickLoop();
+
+  scheduleHeaderFadeWatcher();
+  scheduleBorderFadeWatcher();
+}
+
+async function collapseSession(reason = "tap-collapse") {
+  persistIfRunning(reason);
+
+  running = false;
+  expanded = false;
+
+  frozenSessionSeconds = null;
+  frozenCycleSeconds = null;
+
+  headerStage = 0;
+  borderStage = 0;
+  clearHeaderWatcher();
+  clearBorderWatcher();
+
+  stopTickLoop();
+  await rebuildUI();
 }
 
 // ------------------------------
@@ -994,7 +1009,8 @@ async function start() {
   running = false;
 
   pluginForeground = true;
-  frozenAtSeconds = null;
+  frozenSessionSeconds = null;
+  frozenCycleSeconds = null;
 
   headerStage = 0;
   borderStage = 0;
@@ -1010,12 +1026,15 @@ async function start() {
 
 async function stop() {
   try {
+    // Persist first (idempotent)
     persistIfRunning("stop");
+
     if (exiting) return;
     exiting = true;
 
     clearHeaderWatcher();
     clearBorderWatcher();
+
     stopTickLoop();
 
     if (typeof unsubscribeEvenHub === "function") {
@@ -1031,6 +1050,18 @@ start();
 
 if (typeof window !== "undefined") {
   window.addEventListener("beforeunload", () => stop());
+
+  window.addEventListener("pagehide", () => {
+    persistIfRunning("pagehide");
+  });
+
+  window.addEventListener("error", () => {
+    persistIfRunning("window-error");
+  });
+
+  window.addEventListener("unhandledrejection", () => {
+    persistIfRunning("unhandledrejection");
+  });
 }
 
 if (typeof document !== "undefined") {
