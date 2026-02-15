@@ -999,8 +999,9 @@ function attachGestureListeners() {
 
 let unsubscribeEvenHub = null;
 
-async function start() {
-  bridge = await waitForEvenAppBridge();
+// Boot entry point. Accepts an optional injected bridge for simulator/testing.
+export async function bootStillness(injectedBridge = null) {
+  bridge = injectedBridge ?? (await waitForEvenAppBridge());
 
   accumBaseSecondsToday = loadAccumSecondsToday();
   sessionIdx = loadLastSessionIdx();
@@ -1046,10 +1047,13 @@ async function stop() {
   } catch {}
 }
 
-start();
+// Default boot (hardware bridge)
+//bootStillness();
 
 if (typeof window !== "undefined") {
-  window.addEventListener("beforeunload", () => stop());
+  window.addEventListener("beforeunload", () => {
+    stop();
+  });
 
   window.addEventListener("pagehide", () => {
     persistIfRunning("pagehide");
