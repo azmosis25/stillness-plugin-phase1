@@ -100,9 +100,12 @@ These hooks are intentionally **not implemented in Phase 1**, but the internal a
 ## Current Build Freeze Candidate
 
 - **guided.js**  
-  Flagship guided build and current submission candidate.  
-  Includes guided onboarding, quiet-mode transition, protocol support,
-  and lifecycle-safe behavior for QA and release review.
+  Flagship guided build and current submission candidate for EvenHub QA.  
+  Includes guided onboarding, Quiet Mode transition, protocol-based breathing,  
+  lifecycle-safe persistence, and deterministic gesture handling.
+
+This version represents the **submission-ready build freeze candidate** for the  
+first EvenHub public release wave.
 
 ## Legacy / Reference Builds
 
@@ -117,24 +120,25 @@ These hooks are intentionally **not implemented in Phase 1**, but the internal a
 ## Core Features
 
 - Tap to expand (start session)
-- Tap to collapse (persist time silently)
-- Swipe up/down to switch sessions (expanded only)
-- Session timer continues across breath pattern switches
-- Active phase rendering only (inhale / hold / exhale)
-- Breath glyphs centered consistently across varying phase widths
-- Header pattern hint (e.g., 4-1-6) for first 2 cycles
-- Header fades after 2 cycles (normal → dim → off)
-- Outer frame fades after 4 cycles
+- Tap to collapse (persist session quietly)
+- Swipe up/down to switch protocols (expanded only)
+- Guided onboarding for early breath cycles
+- Automatic transition to Quiet Mode once rhythm is learned
+- Deterministic gesture handling
+- Lifecycle‑safe persistence
+- Breath glyph rendering centered across varying phase widths
+- Protocol‑based breathing structures
+- Progressive UI reduction (interface fades as user internalizes rhythm)
 
 ---
 
-## Sessions
+## Breath Protocols
 
-- De-stress: 4-1-6  
-- Stabilize: 4-4-4  
-- Energize: 2-0-2  
-- Release: 3-0-5  
-- Deep calm: 4-7-8  
+- De-stress · 4‑1‑6  
+- Stabilize · 4‑4‑4‑4  
+- Regulate · 4‑4‑6‑2  
+- Reset · 2+1‑6 (three‑sigh recovery protocol)  
+- Deep calm · 4‑7‑8  
 
 ---
 
@@ -184,17 +188,13 @@ npm run qr
 
 ## Release
 
-Current hardened demo release:
+Current flagship build freeze candidate:
 
-```
-v0.2.0-demo-hardened
-```
+v0.3.0-guided-freeze
 
 Built against:
 
-```
 @evenrealities/even_hub_sdk ^0.0.7
-```
 
 ---
 
