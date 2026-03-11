@@ -31,27 +31,20 @@ It serves as a structural reference for plugin architecture.
 
 ---
 
-## Code Structure
+## Current Build Freeze Candidate
 
-This repository contains two primary entry points:
+- **guided.js**  
+  Flagship guided build and current submission candidate.  
+  Includes guided onboarding, quiet-mode transition, protocol support,
+  and lifecycle-safe behavior for QA and release review.
 
-### `app.js`
-Phase-1 reference implementation.  
-Minimal, instructional, aligned directly with SDK documentation.
+## Legacy / Reference Builds
 
-### `master.js`
-Hardware-validated demo build.  
-Includes:
+- **app.js**  
+  Minimal reference implementation.
 
-- Gesture normalization  
-- Lifecycle-resilient persistence  
-- Defensive state handling  
-- Progressive UI deepening  
-- Simulator + hardware compatibility  
-
-`master.js` represents the current hardened reference implementation.
-
-> For demos, simulator testing, and real-device validation, use `master.js`.
+- **master.js**  
+  Earlier hardened demo build retained for lineage and comparison.
 
 ---
 
