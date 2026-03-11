@@ -1,5 +1,14 @@
 # Stillness Engine — Phase 1 (Even G2)
 
+## Stillness Experience
+
+![Stillness Demo](https://github.com/user-attachments/assets/6bd48e86-612e-46c8-b800-1705134be0a4)
+
+Ambient breathing protocol for Even G2  
+Guided onboarding → Quiet Mode transition
+
+---
+
 A minimal, OS-native breathing plugin for Even G2.  
 Designed as a reference ambient interaction pattern for Even G2 (under current SDK constraints).
 
